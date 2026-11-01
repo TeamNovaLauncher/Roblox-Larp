@@ -1,38 +1,91 @@
 name: Build Roblox Android APK
+
 on:
   push:
     branches: [ main ]
   workflow_dispatch:
+
 permissions:
   contents: read
+
+concurrency:
+  group: android-build-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   build:
-    runs-on: ubuntu-latest
+    name: Lint, test and build APKs
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-java@v4
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '17'
-      - uses: gradle/actions/setup-gradle@v4
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.11.1'
+
       - name: Set up Android SDK
         uses: android-actions/setup-android@v3
         with:
           packages: 'platform-tools'
+
       - name: Accept Android SDK licenses
         run: yes | sdkmanager --licenses || true
+
       - name: Install Android SDK packages
         run: sdkmanager "platforms;android-35" "build-tools;35.0.0"
-      - name: Run Android lint
-        run: gradle --no-daemon :app:lintDebug
+
+      - name: Verify build environment
+        run: |
+          java -version
+          gradle --version
+          test -d "$ANDROID_HOME/platforms/android-35"
+          test -x "$ANDROID_HOME/build-tools/35.0.0/aapt"
+
+      - name: Run unit tests and Android Lint
+        run: |
+          gradle --no-daemon --stacktrace \
+            :app:testDebugUnitTest \
+            :app:lintDebug \
+            :app:lintRelease
+
       - name: Build debug and release APKs
-        run: gradle --no-daemon :app:assembleDebug :app:assembleRelease
-      - uses: actions/upload-artifact@v4
+        run: |
+          gradle --no-daemon --stacktrace \
+            :app:assembleDebug \
+            :app:assembleRelease
+
+      - name: Verify APK files and package metadata
+        shell: bash
+        run: |
+          set -euo pipefail
+          DEBUG_APK="app/build/outputs/apk/debug/app-debug.apk"
+          RELEASE_APK="app/build/outputs/apk/release/app-release-unsigned.apk"
+          for apk in "$DEBUG_APK" "$RELEASE_APK"; do
+            test -s "$apk"
+            unzip -t "$apk"
+            "$ANDROID_HOME/build-tools/35.0.0/aapt" dump badging "$apk" | grep -F "package: name='com.teamnova.robloxlarp'"
+          done
+          "$ANDROID_HOME/build-tools/35.0.0/aapt" dump badging "$DEBUG_APK" | grep -F "launchable-activity:"
+          sha256sum "$DEBUG_APK" "$RELEASE_APK" | tee app/build/outputs/apk/SHA256SUMS.txt
+
+      - name: Upload APKs and verification reports
+        uses: actions/upload-artifact@v4
         with:
           name: Roblox-Android-APKs
           path: |
             app/build/outputs/apk/debug/app-debug.apk
             app/build/outputs/apk/release/app-release-unsigned.apk
+            app/build/outputs/apk/SHA256SUMS.txt
             app/build/reports/lint-results-debug.html
+            app/build/reports/lint-results-release.html
+          if-no-files-found: error
+          retention-days: 30
