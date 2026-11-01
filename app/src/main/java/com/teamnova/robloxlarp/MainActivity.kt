@@ -14,6 +14,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.*
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.*
 import androidx.compose.ui.text.font.FontWeight
@@ -106,8 +107,8 @@ private fun RobloxLarpApp() {
         ) { pad ->
             when (page) {
                 "Home" -> HomeFeed(
-                    Modifier.padding(pad), username, homeTab, { homeTab = it }, search, { search = it },
-                    onMenu = { drawer = true }, onSearch = { page = "Search" }, onNotifications = { notice = "Уведомления пока демонстрационные" },
+                    Modifier.padding(pad), username, homeTab, { homeTab = it }, search,
+                    onMenu = { drawer = true }, onSearchOpen = { page = "Search" }, onNotifications = { notice = "Уведомления пока демонстрационные" },
                     onProfile = { page = "Me" }, notice = notice, clearNotice = { notice = "" }
                 )
                 "Me", "Profile" -> ProfilePage(Modifier.padding(pad), username, handle, robux, followers, following, friends, visits, owned.size, { edit = true })
@@ -137,7 +138,7 @@ private fun RobloxLarpApp() {
 @Composable
 private fun HomeFeed(
     modifier: Modifier, username: String, selected: String, onSelected: (String) -> Unit,
-    search: String, onSearch: (String) -> Unit, onMenu: () -> Unit, onSearchOpen: () -> Unit,
+    search: String, onMenu: () -> Unit, onSearchOpen: () -> Unit,
     onNotifications: () -> Unit, onProfile: () -> Unit, notice: String, clearNotice: () -> Unit
 ) {
     LazyColumn(modifier.fillMaxSize(), contentPadding = PaddingValues(bottom = 20.dp)) {
@@ -288,7 +289,7 @@ private fun DrawerPanel(username: String, handle: String, robux: Int, friends: I
             Triple("Help & Safety", Icons.Default.Shield, "Help")
         )
         items(entries) { (label, icon, destination) ->
-            Row(Modifier.fillMaxWidth().clickable { onSelect(if (destination == "Favorites" || destination == "Continue" || destination == "Communities" || destination == "Trades" || destination == "Plus" || destination == "Gift Cards" || destination == "Help") destination else destination }.padding(horizontal = 24.dp, vertical = 15.dp), verticalAlignment = Alignment.CenterVertically) {
+            Row(Modifier.fillMaxWidth().clickable { onSelect(destination) }.padding(horizontal = 24.dp, vertical = 15.dp), verticalAlignment = Alignment.CenterVertically) {
                 Icon(icon, null, tint = White, modifier = Modifier.size(25.dp))
                 Text(label, color = White, fontSize = 19.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(start = 24.dp).weight(1f))
                 if (label == "Friends") CountPill(friends.toString())
