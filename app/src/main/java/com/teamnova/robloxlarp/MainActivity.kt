@@ -64,10 +64,13 @@ private fun RobloxLarpApp() {
     var search by rememberSaveable { mutableStateOf("") }
     var edit by remember { mutableStateOf(false) }
     val owned = remember { mutableStateListOf<String>() }
-    val scope = rememberCoroutineScope()
+    val drawerState = rememberDrawerState(DrawerValue.Closed)
+    LaunchedEffect(drawer) {
+        if (drawer) drawerState.open() else drawerState.close()
+    }
 
     ModalNavigationDrawer(
-        drawerState = rememberDrawerState(if (drawer) DrawerValue.Open else DrawerValue.Closed),
+        drawerState = drawerState,
         gesturesEnabled = true,
         drawerContent = {
             ModalDrawerSheet(
