@@ -193,7 +193,7 @@ private fun HomeScreen(search: String, onSearch: (String) -> Unit, onShop: () ->
 
 @Composable
 private fun AvatarScreen(owned: Set<Int>, equipped: Int, onEquip: (Int) -> Unit, onShop: () -> Unit) {
-    val items = shopItems.filter { it.id in owned }
+    val inventoryItems = shopItems.filter { it.id in owned }
     LazyColumn(contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
         item { Text("Avatar", fontSize = 27.sp, fontWeight = FontWeight.ExtraBold, color = Ink) }
         item {
@@ -207,8 +207,8 @@ private fun AvatarScreen(owned: Set<Int>, equipped: Int, onEquip: (Int) -> Unit,
             }
         }
         item { SectionTitle("Inventory", "${items.size} items") }
-        if (items.isEmpty()) item { EmptyState("Your inventory is empty", "Visit the shop to get your first item.", onShop) }
-        items(items) { item ->
+        if (inventoryItems.isEmpty()) item { EmptyState("Your inventory is empty", "Visit the shop to get your first item.", onShop) }
+        items(inventoryItems) { item ->
             Row(Modifier.fillMaxWidth().background(Color.White, RoundedCornerShape(14.dp)).padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
                 Text(item.emoji, fontSize = 32.sp)
                 Column(Modifier.weight(1f).padding(start = 12.dp)) { Text(item.name, color = Ink, fontWeight = FontWeight.Bold); Text(item.kind, color = Muted, fontSize = 12.sp) }
