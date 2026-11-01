@@ -3,363 +3,395 @@ package com.teamnova.robloxlarp
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.*
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.*
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
+import androidx.compose.ui.unit.*
+import kotlinx.coroutines.launch
 
-private val RobloxBlue = Color(0xFF335FFF)
-private val Ink = Color(0xFF191B20)
-private val Muted = Color(0xFF707783)
-private val Page = Color(0xFFF4F5F7)
+private val Bg = Color(0xFF090B12)
+private val Panel = Color(0xFF171923)
+private val Wine = Color(0xFF3B080B)
+private val Accent = Color(0xFFB51E2B)
+private val White = Color(0xFFF7F7FA)
+private val Grey = Color(0xFF9B9DA8)
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContent { RobloxApp() }
+        window.statusBarColor = android.graphics.Color.rgb(31, 5, 8)
+        window.navigationBarColor = android.graphics.Color.rgb(31, 5, 8)
+        setContent { RobloxLarpApp() }
     }
 }
 
-private data class ShopItem(val id: Int, val name: String, val kind: String, val price: Int, val emoji: String, val detail: String)
-
-private val shopItems = listOf(
-    ShopItem(1, "Classic Black Shades", "Accessories", 75, "🕶️", "A clean classic look"),
-    ShopItem(2, "Golden Crown", "Accessories", 450, "👑", "Stand out in every server"),
-    ShopItem(3, "Blue Headphones", "Accessories", 120, "🎧", "Music-inspired style"),
-    ShopItem(4, "Sparkle Wings", "Accessories", 650, "🪽", "A little extra shine"),
-    ShopItem(5, "Messy Brown Hair", "Hair", 90, "💇", "Casual layered hair"),
-    ShopItem(6, "Pink Star Hair", "Hair", 140, "🌸", "Bright and playful"),
-    ShopItem(7, "Smiley Face", "Faces", 50, "😊", "A friendly expression"),
-    ShopItem(8, "Cool Face", "Faces", 100, "😎", "Stay cool"),
-    ShopItem(9, "Red Street Hoodie", "Clothing", 85, "🧥", "Streetwear essential"),
-    ShopItem(10, "White Tee", "Clothing", 35, "👕", "Simple everyday fit"),
-    ShopItem(11, "Neon Backpack", "Accessories", 180, "🎒", "Carry your style"),
-    ShopItem(12, "Pixel Pet", "Accessories", 300, "🐾", "A tiny companion")
+private data class Experience(val name: String, val rating: String, val emoji: String, val colors: List<Color>, val tag: String = "Experience")
+private val experiences = listOf(
+    Experience("Сбросить вещи и лететь", "80%", "🧍", listOf(Color(0xFF315A9D), Color(0xFFB34A36))),
+    Experience("Опыт смертельный", "93%", "🐒", listOf(Color(0xFF353B43), Color(0xFF9A9B8B))),
+    Experience("Car Dealership Tycoon", "92%", "🏎️", listOf(Color(0xFF5C160F), Color(0xFFB85A22))),
+    Experience("+1 ползунок клавиш", "", "🏊", listOf(Color(0xFF0874C8), Color(0xFF42C9F2)), "Ad"),
+    Experience("Brookhaven RP", "95%", "🏡", listOf(Color(0xFF2A8C77), Color(0xFF8ED6BD))),
+    Experience("Adopt Me!", "97%", "🐶", listOf(Color(0xFFB779B6), Color(0xFFF4C3D4)))
 )
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun RobloxApp() {
-    var tab by rememberSaveable { mutableStateOf("Home") }
-    var menuOpen by remember { mutableStateOf(false) }
-    var editOpen by remember { mutableStateOf(false) }
-    var search by rememberSaveable { mutableStateOf("") }
-    var category by rememberSaveable { mutableStateOf("All") }
-    var username by rememberSaveable { mutableStateOf("Builder_2048") }
-    var displayName by rememberSaveable { mutableStateOf("Builder") }
-    var bio by rememberSaveable { mutableStateOf("Just having fun and building worlds.") }
-    var robux by rememberSaveable { mutableIntStateOf(1250) }
+private fun RobloxLarpApp() {
+    var page by rememberSaveable { mutableStateOf("Home") }
+    var drawer by rememberSaveable { mutableStateOf(false) }
+    var homeTab by rememberSaveable { mutableStateOf("For you") }
+    var username by rememberSaveable { mutableStateOf("Vexo") }
+    var handle by rememberSaveable { mutableStateOf("Red33391732") }
+    var robux by rememberSaveable { mutableIntStateOf(0) }
     var followers by rememberSaveable { mutableIntStateOf(248) }
     var following by rememberSaveable { mutableIntStateOf(120) }
-    var friends by rememberSaveable { mutableIntStateOf(86) }
+    var friends by rememberSaveable { mutableIntStateOf(28) }
     var visits by rememberSaveable { mutableIntStateOf(12400) }
-    var owned by remember { mutableStateOf(setOf<Int>()) }
-    var equipped by rememberSaveable { mutableIntStateOf(0) }
     var notice by remember { mutableStateOf("") }
+    var search by rememberSaveable { mutableStateOf("") }
+    var edit by remember { mutableStateOf(false) }
+    val owned = remember { mutableStateListOf<String>() }
+    val scope = rememberCoroutineScope()
 
-    val titles = listOf("Home", "Avatar", "Shop", "Profile")
-    Scaffold(
-        containerColor = Page,
-        topBar = {
-            TopAppBar(
-                title = {
-                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Box(Modifier.size(30.dp).background(RobloxBlue, RoundedCornerShape(8.dp)), contentAlignment = Alignment.Center) {
-                            Text("R", color = Color.White, fontWeight = FontWeight.Black, fontSize = 20.sp)
-                        }
-                        Text("roblox", fontWeight = FontWeight.ExtraBold, fontSize = 23.sp, color = Ink)
-                    }
-                },
-                actions = {
-                    Text("R$ $robux", color = Ink, fontWeight = FontWeight.Bold, modifier = Modifier.padding(end = 8.dp))
-                    IconButton(onClick = { menuOpen = true }) { Icon(Icons.Default.MoreVert, "More") }
-                    DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
-                        DropdownMenuItem(text = { Text("Edit profile & stats") }, leadingIcon = { Icon(Icons.Default.Edit, null) }, onClick = { menuOpen = false; editOpen = true })
-                        DropdownMenuItem(text = { Text("My inventory") }, leadingIcon = { Icon(Icons.Default.Backpack, null) }, onClick = { menuOpen = false; tab = "Avatar" })
-                        DropdownMenuItem(text = { Text("About this LARP") }, leadingIcon = { Icon(Icons.Default.Info, null) }, onClick = { menuOpen = false; notice = "Fan-made simulator. Not affiliated with Roblox." })
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White)
-            )
-        },
-        bottomBar = {
-            NavigationBar(containerColor = Color.White) {
-                val icons = listOf(Icons.Default.Home, Icons.Default.Face, Icons.Default.ShoppingBag, Icons.Default.Person)
-                titles.forEachIndexed { index, title ->
-                    NavigationBarItem(
-                        selected = tab == title,
-                        onClick = { tab = title },
-                        icon = { Icon(icons[index], contentDescription = title) },
-                        label = { Text(title) },
-                        colors = NavigationBarItemDefaults.colors(selectedIconColor = RobloxBlue, indicatorColor = Color(0xFFE8EDFF), selectedTextColor = RobloxBlue)
-                    )
-                }
+    ModalNavigationDrawer(
+        drawerState = rememberDrawerState(if (drawer) DrawerValue.Open else DrawerValue.Closed),
+        gesturesEnabled = true,
+        drawerContent = {
+            ModalDrawerSheet(
+                drawerContainerColor = Wine,
+                drawerContentColor = White,
+                modifier = Modifier.fillMaxHeight().fillMaxWidth(.88f)
+            ) {
+                DrawerPanel(username, handle, robux, friends,
+                    onSelect = { selected -> page = selected; drawer = false },
+                    onEdit = { edit = true; drawer = false },
+                    onClose = { drawer = false })
             }
         },
-        snackbarHost = { SnackbarHost(hostState = remember { SnackbarHostState() }) }
-    ) { padding ->
-        Column(Modifier.fillMaxSize().padding(padding)) {
-            when (tab) {
-                "Home" -> HomeScreen(
-                    search = search, onSearch = { search = it },
-                    onShop = { tab = "Shop" }, onProfile = { tab = "Profile" },
-                    robux = robux, username = username
-                )
-                "Avatar" -> AvatarScreen(owned, equipped, onEquip = { equipped = it }, onShop = { tab = "Shop" })
-                "Shop" -> ShopScreen(
-                    robux = robux, owned = owned, category = category, onCategory = { category = it },
-                    onBuy = { item ->
-                        if (item.id in owned) notice = "Already in your inventory"
-                        else if (robux >= item.price) { robux -= item.price; owned = owned + item.id; notice = "Purchased ${item.name}!" }
-                        else notice = "Not enough LARP Robux"
-                    }
-                )
-                else -> ProfileScreen(username, displayName, bio, followers, following, friends, visits, owned.size, onEdit = { editOpen = true })
-            }
-            if (notice.isNotBlank()) {
-                Surface(color = Ink, shape = RoundedCornerShape(12.dp), modifier = Modifier.padding(12.dp).fillMaxWidth().clickable { notice = "" }) {
-                    Text(notice, color = Color.White, modifier = Modifier.padding(14.dp), fontSize = 14.sp)
-                }
-            }
-        }
-    }
-
-    if (editOpen) {
-        EditStatsDialog(
-            username, displayName, bio, robux, followers, following, friends, visits,
-            onDismiss = { editOpen = false },
-            onSave = { u, d, b, r, f, fg, fr, v ->
-                username = u; displayName = d; bio = b
-                robux = r; followers = f; following = fg; friends = fr; visits = v
-                editOpen = false; notice = "Profile updated"
-            }
-        )
-    }
-}
-
-@Composable
-private fun HomeScreen(search: String, onSearch: (String) -> Unit, onShop: () -> Unit, onProfile: () -> Unit, robux: Int, username: String) {
-    LazyColumn(contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-        item {
-            OutlinedTextField(value = search, onValueChange = onSearch, modifier = Modifier.fillMaxWidth(), placeholder = { Text("Search") }, leadingIcon = { Icon(Icons.Default.Search, null) }, singleLine = true, shape = RoundedCornerShape(14.dp))
-        }
-        item {
-            Surface(shape = RoundedCornerShape(18.dp), color = RobloxBlue, modifier = Modifier.fillMaxWidth()) {
-                Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text("WELCOME TO ROBLOX", color = Color.White.copy(alpha = .8f), fontSize = 11.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
-                    Text("Your world. Your avatar.", color = Color.White, fontSize = 25.sp, fontWeight = FontWeight.ExtraBold)
-                    Text("Hey, $username! Jump into your LARP experience.", color = Color.White)
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Button(onClick = onShop, colors = ButtonDefaults.buttonColors(containerColor = Color.White, contentColor = RobloxBlue)) { Text("Explore shop") }
-                        OutlinedButton(onClick = onProfile, border = null, colors = ButtonDefaults.outlinedButtonColors(contentColor = Color.White)) { Text("My profile") }
+        scrimColor = Color.Black.copy(alpha = .62f)
+    ) {
+        Scaffold(
+            containerColor = Bg,
+            bottomBar = {
+                NavigationBar(containerColor = Wine, contentColor = White, tonalElevation = 0.dp) {
+                    val nav = listOf("Home", "Moments", "Chat", "Me")
+                    val icons = listOf(Icons.Default.Home, Icons.Default.Slideshow, Icons.Default.ChatBubbleOutline, Icons.Default.Person)
+                    nav.forEachIndexed { i, item ->
+                        NavigationBarItem(
+                            selected = page == item,
+                            onClick = { page = item },
+                            icon = { Icon(icons[i], item, tint = if (page == item) White else Color(0xFFBDB4B7), modifier = Modifier.size(25.dp)) },
+                            label = { Text(item, color = if (page == item) White else Color(0xFFBDB4B7), fontSize = 12.sp) },
+                            colors = NavigationBarItemDefaults.colors(indicatorColor = Color(0xFF681016))
+                        )
                     }
                 }
             }
-        }
-        item { SectionTitle("Continue exploring", "Discover") }
-        items(listOf("Brookhaven RP" to "🏡", "Adopt Me!" to "🐶", "Tower of Fun" to "🗼", "Fashion Studio" to "👗").filter { search.isBlank() || it.first.contains(search, true) }) { (name, emoji) ->
-            Row(Modifier.fillMaxWidth().background(Color.White, RoundedCornerShape(14.dp)).padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
-                Box(Modifier.size(58.dp).background(Color(0xFFE9EDFA), RoundedCornerShape(12.dp)), contentAlignment = Alignment.Center) { Text(emoji, fontSize = 30.sp) }
-                Column(Modifier.weight(1f).padding(start = 12.dp)) { Text(name, fontWeight = FontWeight.Bold, color = Ink); Text("Experience • LARP preview", color = Muted, fontSize = 12.sp) }
-                Icon(Icons.Default.ChevronRight, null, tint = Muted)
+        ) { pad ->
+            when (page) {
+                "Home" -> HomeFeed(
+                    Modifier.padding(pad), username, homeTab, { homeTab = it }, search, { search = it },
+                    onMenu = { drawer = true }, onSearch = { page = "Search" }, onNotifications = { notice = "Уведомления пока демонстрационные" },
+                    onProfile = { page = "Me" }, notice = notice, clearNotice = { notice = "" }
+                )
+                "Me", "Profile" -> ProfilePage(Modifier.padding(pad), username, handle, robux, followers, following, friends, visits, owned.size, { edit = true })
+                "Shop" -> ShopPage(Modifier.padding(pad), robux, owned, { robux -= it; owned.add("Предмет #${owned.size + 1}"); notice = "Покупка добавлена в инвентарь" })
+                "Inventory" -> SimplePage(Modifier.padding(pad), "Inventory", if (owned.isEmpty()) listOf("Инвентарь пока пуст") else owned.toList())
+                "Search" -> SearchPage(Modifier.padding(pad), search, { search = it }, { page = "Home" })
+                else -> SimplePage(Modifier.padding(pad), page, when (page) {
+                    "Friends" -> listOf("Друзья: $friends", "Добавить друзей")
+                    "Messages" -> listOf("Сообщений пока нет")
+                    "Settings" -> listOf("Настройки аккаунта", "Уведомления", "Конфиденциальность")
+                    else -> listOf("Раздел скоро появится")
+                })
             }
         }
-        item {
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                Text("Your balance", color = Muted)
-                Text("R$ $robux", color = RobloxBlue, fontWeight = FontWeight.ExtraBold)
-            }
-        }
-        item { Text("This is a local LARP preview. Experience cards are illustrative and do not launch Roblox games.", color = Muted, fontSize = 11.sp) }
+    }
+
+    if (edit) {
+        EditProfileDialog(username, handle, robux, followers, following, friends, visits,
+            onDismiss = { edit = false },
+            onSave = { u, h, r, f, fg, fr, v ->
+                username = u; handle = h; robux = r; followers = f; following = fg; friends = fr; visits = v
+                edit = false; notice = "Профиль обновлён"
+            })
     }
 }
 
 @Composable
-private fun AvatarScreen(owned: Set<Int>, equipped: Int, onEquip: (Int) -> Unit, onShop: () -> Unit) {
-    val inventoryItems = shopItems.filter { it.id in owned }
-    LazyColumn(contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
-        item { Text("Avatar", fontSize = 27.sp, fontWeight = FontWeight.ExtraBold, color = Ink) }
-        item {
-            Surface(color = Color(0xFFE6EBF7), shape = RoundedCornerShape(20.dp), modifier = Modifier.fillMaxWidth()) {
-                Column(Modifier.padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                    Box(Modifier.size(116.dp).background(Color.White, CircleShape), contentAlignment = Alignment.Center) { Text("🧍", fontSize = 70.sp) }
-                    Spacer(Modifier.height(10.dp))
-                    Text("Your avatar", fontWeight = FontWeight.Bold, fontSize = 19.sp)
-                    Text(if (equipped == 0) "Classic look" else "Equipped: ${shopItems.firstOrNull { it.id == equipped }?.name ?: "Item"}", color = Muted)
-                }
-            }
-        }
-        item { SectionTitle("Inventory", "${inventoryItems.size} items") }
-        if (inventoryItems.isEmpty()) item { EmptyState("Your inventory is empty", "Visit the shop to get your first item.", onShop) }
-        items(inventoryItems) { item ->
-            Row(Modifier.fillMaxWidth().background(Color.White, RoundedCornerShape(14.dp)).padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
-                Text(item.emoji, fontSize = 32.sp)
-                Column(Modifier.weight(1f).padding(start = 12.dp)) { Text(item.name, color = Ink, fontWeight = FontWeight.Bold); Text(item.kind, color = Muted, fontSize = 12.sp) }
-                Button(onClick = { onEquip(item.id) }, colors = ButtonDefaults.buttonColors(containerColor = if (equipped == item.id) Color(0xFFE6EBF7) else RobloxBlue, contentColor = if (equipped == item.id) RobloxBlue else Color.White)) { Text(if (equipped == item.id) "Equipped" else "Wear") }
-            }
-        }
-        item { OutlinedButton(onClick = onShop, modifier = Modifier.fillMaxWidth()) { Text("Browse shop") } }
-    }
-}
-
-@Composable
-private fun ShopScreen(robux: Int, owned: Set<Int>, category: String, onCategory: (String) -> Unit, onBuy: (ShopItem) -> Unit) {
-    val categories = listOf("All", "Accessories", "Hair", "Faces", "Clothing")
-    val visible = shopItems.filter { (category == "All" || it.kind == category) }
-    LazyColumn(contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        item {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Column(Modifier.weight(1f)) { Text("Avatar Shop", fontSize = 27.sp, fontWeight = FontWeight.ExtraBold, color = Ink); Text("Find your next look", color = Muted) }
-                Surface(color = Color.White, shape = RoundedCornerShape(12.dp)) { Text("R$ $robux", modifier = Modifier.padding(12.dp), color = RobloxBlue, fontWeight = FontWeight.Bold) }
-            }
-        }
-        item {
-            Row(horizontalArrangement = Arrangement.spacedBy(7.dp)) {
-                categories.forEach { c ->
-                    FilterChip(selected = category == c, onClick = { onCategory(c) }, label = { Text(c) })
-                }
-            }
-        }
-        items(visible) { item ->
-            Row(Modifier.fillMaxWidth().background(Color.White, RoundedCornerShape(16.dp)).padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
-                Box(Modifier.size(68.dp).background(Color(0xFFF0F2F6), RoundedCornerShape(12.dp)), contentAlignment = Alignment.Center) { Text(item.emoji, fontSize = 34.sp) }
-                Column(Modifier.weight(1f).padding(horizontal = 12.dp), verticalArrangement = Arrangement.spacedBy(3.dp)) {
-                    Text(item.name, fontWeight = FontWeight.Bold, color = Ink, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                    Text(item.detail, color = Muted, fontSize = 11.sp)
-                    Text("R$ ${item.price}", color = Ink, fontWeight = FontWeight.Bold)
-                }
-                Button(onClick = { onBuy(item) }, enabled = item.id !in owned, contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp)) {
-                    Text(if (item.id in owned) "Owned" else "Buy")
-                }
-            }
-        }
-        item { Text("Demo catalog: these are sample LARP items, not the live Roblox Marketplace catalogue.", color = Muted, fontSize = 11.sp) }
-    }
-}
-
-@Composable
-private fun ProfileScreen(username: String, displayName: String, bio: String, followers: Int, following: Int, friends: Int, visits: Int, owned: Int, onEdit: () -> Unit) {
-    LazyColumn(contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
-        item {
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                Text("Profile", fontSize = 27.sp, fontWeight = FontWeight.ExtraBold, color = Ink)
-                OutlinedButton(onClick = onEdit) { Icon(Icons.Default.Edit, null, modifier = Modifier.size(16.dp)); Spacer(Modifier.width(5.dp)); Text("Edit") }
-            }
-        }
-        item {
-            Surface(color = Color.White, shape = RoundedCornerShape(18.dp), modifier = Modifier.fillMaxWidth()) {
-                Column(Modifier.padding(18.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                    Box(Modifier.size(92.dp).background(Color(0xFFE6EBF7), CircleShape), contentAlignment = Alignment.Center) { Text("🧑", fontSize = 58.sp) }
-                    Spacer(Modifier.height(10.dp))
-                    Text(displayName, color = Ink, fontWeight = FontWeight.ExtraBold, fontSize = 22.sp)
-                    Text("@$username", color = Muted)
-                    Text(bio, color = Ink, modifier = Modifier.padding(top = 12.dp), textAlign = androidx.compose.ui.text.style.TextAlign.Center)
-                    Text("Fan-made LARP profile", color = Muted, fontSize = 11.sp, modifier = Modifier.padding(top = 8.dp))
-                }
-            }
-        }
-        item {
-            Text("Statistics", color = Ink, fontWeight = FontWeight.Bold, fontSize = 18.sp)
-            Spacer(Modifier.height(8.dp))
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                StatTile("Followers", followers.toString(), Modifier.weight(1f))
-                StatTile("Following", following.toString(), Modifier.weight(1f))
-            }
-            Spacer(Modifier.height(8.dp))
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                StatTile("Friends", friends.toString(), Modifier.weight(1f))
-                StatTile("Visits", visits.toString(), Modifier.weight(1f))
-                StatTile("Items", owned.toString(), Modifier.weight(1f))
-            }
-        }
-    }
-}
-
-@Composable
-private fun StatTile(label: String, value: String, modifier: Modifier = Modifier) {
-    Surface(color = Color.White, shape = RoundedCornerShape(14.dp), modifier = modifier) {
-        Column(Modifier.padding(12.dp)) { Text(value, fontSize = 19.sp, fontWeight = FontWeight.ExtraBold, color = Ink); Text(label, fontSize = 11.sp, color = Muted) }
-    }
-}
-
-@Composable
-private fun SectionTitle(title: String, trailing: String) {
-    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-        Text(title, color = Ink, fontWeight = FontWeight.ExtraBold, fontSize = 19.sp)
-        Text(trailing, color = RobloxBlue, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
-    }
-}
-
-@Composable
-private fun EmptyState(title: String, subtitle: String, action: () -> Unit) {
-    Column(Modifier.fillMaxWidth().background(Color.White, RoundedCornerShape(16.dp)).padding(22.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-        Text("🎒", fontSize = 36.sp)
-        Text(title, fontWeight = FontWeight.Bold, color = Ink)
-        Text(subtitle, color = Muted, fontSize = 12.sp)
-        Spacer(Modifier.height(8.dp))
-        Button(onClick = action) { Text("Open shop") }
-    }
-}
-
-@Composable
-private fun EditStatsDialog(
-    initialUser: String, initialDisplay: String, initialBio: String,
-    initialRobux: Int, initialFollowers: Int, initialFollowing: Int, initialFriends: Int, initialVisits: Int,
-    onDismiss: () -> Unit,
-    onSave: (String, String, String, Int, Int, Int, Int, Int) -> Unit
+private fun HomeFeed(
+    modifier: Modifier, username: String, selected: String, onSelected: (String) -> Unit,
+    search: String, onSearch: (String) -> Unit, onMenu: () -> Unit, onSearchOpen: () -> Unit,
+    onNotifications: () -> Unit, onProfile: () -> Unit, notice: String, clearNotice: () -> Unit
 ) {
-    var user by remember { mutableStateOf(initialUser) }
-    var display by remember { mutableStateOf(initialDisplay) }
-    var bio by remember { mutableStateOf(initialBio) }
-    var r by remember { mutableStateOf(initialRobux.toString()) }
-    var f by remember { mutableStateOf(initialFollowers.toString()) }
-    var fg by remember { mutableStateOf(initialFollowing.toString()) }
-    var fr by remember { mutableStateOf(initialFriends.toString()) }
-    var v by remember { mutableStateOf(initialVisits.toString()) }
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text("Customize your LARP profile") },
-        text = {
-            LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.heightIn(max = 470.dp)) {
-                item { EditField("Username", user) { user = it } }
-                item { EditField("Display name", display) { display = it } }
-                item { EditField("About", bio) { bio = it } }
-                item { Text("Profile statistics", fontWeight = FontWeight.Bold, color = Ink, modifier = Modifier.padding(top = 8.dp)) }
-                item { EditField("Robux", r, true) { r = it } }
-                item { EditField("Followers", f, true) { f = it } }
-                item { EditField("Following", fg, true) { fg = it } }
-                item { EditField("Friends", fr, true) { fr = it } }
-                item { EditField("Visits", v, true) { v = it } }
-                item { Text("Changes apply only inside this local LARP app. They do not change a real Roblox account.", color = Muted, fontSize = 11.sp) }
+    LazyColumn(modifier.fillMaxSize(), contentPadding = PaddingValues(bottom = 20.dp)) {
+        item {
+            Box(Modifier.fillMaxWidth().background(Brush.linearGradient(listOf(Color(0xFF3C080D), Bg, Color(0xFF15121C))))) {
+                Canvas(Modifier.matchParentSize()) {
+                    for (i in 0..7) {
+                        val x = size.width * (i * .19f - .1f)
+                        drawLine(Color(0xFF70121A).copy(alpha = .22f), Offset(x, 0f), Offset(x + size.width * .35f, size.height), strokeWidth = 22f)
+                    }
+                }
+                Row(Modifier.fillMaxWidth().padding(horizontal = 18.dp, vertical = 17.dp), verticalAlignment = Alignment.CenterVertically) {
+                    IconButton(onClick = onMenu) { Icon(Icons.Default.Menu, "Menu", tint = White, modifier = Modifier.size(31.dp)) }
+                    Text("ROBLOX", color = White, fontSize = 27.sp, fontWeight = FontWeight.Black, modifier = Modifier.weight(1f), letterSpacing = (-1).sp)
+                    IconButton(onClick = onSearchOpen) { Icon(Icons.Default.Search, "Search", tint = White, modifier = Modifier.size(31.dp)) }
+                    IconButton(onClick = { }) { Icon(Icons.Default.Hexagon, "Robux", tint = White, modifier = Modifier.size(27.dp)) }
+                    Box {
+                        IconButton(onClick = onNotifications) { Icon(Icons.Default.NotificationsNone, "Notifications", tint = White, modifier = Modifier.size(29.dp)) }
+                        Box(Modifier.align(Alignment.TopEnd).padding(top = 1.dp, end = 1.dp).size(20.dp).background(Color(0xFF3867F5), CircleShape), contentAlignment = Alignment.Center) { Text("4", color = White, fontSize = 12.sp, fontWeight = FontWeight.Bold) }
+                    }
+                }
             }
-        },
-        confirmButton = { Button(onClick = { onSave(user.ifBlank { "Player" }, display.ifBlank { "Player" }, bio, r.toIntOrNull()?.coerceAtLeast(0) ?: 0, f.toIntOrNull()?.coerceAtLeast(0) ?: 0, fg.toIntOrNull()?.coerceAtLeast(0) ?: 0, fr.toIntOrNull()?.coerceAtLeast(0) ?: 0, v.toIntOrNull()?.coerceAtLeast(0) ?: 0) }) { Text("Save") } },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } }
-    )
+        }
+        item {
+            Row(Modifier.fillMaxWidth().padding(horizontal = 18.dp), horizontalArrangement = Arrangement.spacedBy(0.dp)) {
+                listOf("For you", "Charts").forEach { tab ->
+                    Column(Modifier.weight(1f).clickable { onSelected(tab) }.padding(vertical = 13.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                        Text(tab, color = if (selected == tab) White else Grey, fontSize = 19.sp, fontWeight = if (selected == tab) FontWeight.SemiBold else FontWeight.Normal)
+                        Spacer(Modifier.height(13.dp))
+                        Box(Modifier.fillMaxWidth().height(if (selected == tab) 2.dp else 1.dp).background(if (selected == tab) White else Color(0xFF34343D)))
+                    }
+                }
+            }
+        }
+        item {
+            Row(Modifier.padding(start = 20.dp, top = 26.dp, bottom = 12.dp).clickable { onProfile() }, verticalAlignment = Alignment.CenterVertically) {
+                AvatarCircle("👑", 48)
+                Text(username, color = White, fontSize = 23.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(start = 14.dp))
+            }
+        }
+        item {
+            LazyRow(contentPadding = PaddingValues(horizontal = 18.dp), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                item { FriendBubble("Add Friends", "＋", true) }
+                items(listOf("Dadon_419", "METRORO...", "Batman", "Alex", "Guest")) { name ->
+                    FriendBubble(name, when (name) { "Dadon_419" -> "😎"; "METRORO..." -> "🙂"; "Batman" -> "🦇"; else -> "🧑" }, false)
+                }
+            }
+        }
+        item {
+            Text(if (selected == "For you") "Recommended For You" else "Top Charts", color = White, fontSize = 22.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(start = 18.dp, top = 27.dp, bottom = 14.dp))
+        }
+        val shown = if (search.isBlank()) experiences else experiences.filter { it.name.contains(search, true) }
+        val cards = if (selected == "Charts") shown.sortedByDescending { it.rating } else shown
+        items(cards.chunked(2)) { pair ->
+            Row(Modifier.fillMaxWidth().padding(horizontal = 18.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                pair.forEach { exp -> ExperienceCard(exp, Modifier.weight(1f)) }
+                if (pair.size == 1) Spacer(Modifier.weight(1f))
+            }
+            Spacer(Modifier.height(14.dp))
+        }
+        item {
+            Row(Modifier.fillMaxWidth().padding(horizontal = 18.dp, vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
+                Text("Continue", color = White, fontSize = 22.sp, fontWeight = FontWeight.Bold)
+                Icon(Icons.Default.ChevronRight, null, tint = White)
+            }
+        }
+        if (notice.isNotBlank()) item {
+            Text(notice, color = White, modifier = Modifier.padding(18.dp).fillMaxWidth().clip(RoundedCornerShape(12.dp)).background(Panel).clickable { clearNotice() }.padding(14.dp))
+        }
+        item { Text("Fan-made LARP simulator • Not affiliated with Roblox", color = Grey, fontSize = 10.sp, modifier = Modifier.padding(18.dp)) }
+    }
 }
 
 @Composable
-private fun EditField(label: String, value: String, number: Boolean = false, onChange: (String) -> Unit) {
-    OutlinedTextField(
-        value = value, onValueChange = { text -> onChange(if (number) text.filter { it.isDigit() }.take(9) else text) },
-        label = { Text(label) }, modifier = Modifier.fillMaxWidth(), singleLine = true,
-        keyboardOptions = KeyboardOptions(keyboardType = if (number) KeyboardType.Number else KeyboardType.Text)
+private fun FriendBubble(name: String, face: String, add: Boolean) {
+    Column(Modifier.width(112.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+        Box(Modifier.size(112.dp).background(Color(0xFF292B35), CircleShape).border(1.dp, Color(0xFF383A46), CircleShape), contentAlignment = Alignment.Center) {
+            if (add) Icon(Icons.Default.PersonAdd, null, tint = White, modifier = Modifier.size(52.dp))
+            else Text(face, fontSize = 54.sp)
+            if (!add) Box(Modifier.align(Alignment.BottomEnd).padding(5.dp).size(18.dp).background(Color(0xFF24C77A), CircleShape).border(2.dp, Bg, CircleShape))
+        }
+        Text(name, color = White, fontWeight = FontWeight.SemiBold, fontSize = 14.sp, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(top = 8.dp))
+        if (!add && name == "Dadon_419") Text("[🎃]...", color = Grey, fontSize = 12.sp)
+        if (!add && name == "METRORO...") Text("Поход за...", color = Grey, fontSize = 12.sp)
+    }
+}
+
+@Composable
+private fun ExperienceCard(exp: Experience, modifier: Modifier = Modifier) {
+    Column(modifier) {
+        Box(Modifier.fillMaxWidth().height(112.dp).clip(RoundedCornerShape(13.dp)).background(Brush.linearGradient(exp.colors)), contentAlignment = Alignment.Center) {
+            Text(exp.emoji, fontSize = 62.sp)
+            Text("▶", color = White.copy(alpha = .7f), fontSize = 20.sp, modifier = Modifier.align(Alignment.BottomEnd).padding(9.dp))
+        }
+        Text(exp.name, color = White, fontSize = 15.sp, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(top = 8.dp))
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            if (exp.tag == "Ad") Text("Ad", color = Grey, fontSize = 14.sp)
+            else {
+                Icon(Icons.Default.ThumbUp, null, tint = Color(0xFFD9DCE4), modifier = Modifier.size(16.dp))
+                Text(" ${exp.rating} Rating", color = Color(0xFFD9DCE4), fontSize = 14.sp)
+            }
+        }
+    }
+}
+
+@Composable
+private fun DrawerPanel(username: String, handle: String, robux: Int, friends: Int, onSelect: (String) -> Unit, onEdit: () -> Unit, onClose: () -> Unit) {
+    LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(bottom = 24.dp)) {
+        item {
+            Row(Modifier.fillMaxWidth().padding(start = 22.dp, end = 8.dp, top = 32.dp, bottom = 24.dp), verticalAlignment = Alignment.CenterVertically) {
+                AvatarCircle("👑", 82)
+                Column(Modifier.weight(1f).padding(start = 18.dp)) {
+                    Text(username, color = White, fontSize = 23.sp, fontWeight = FontWeight.Bold)
+                    Text("@$handle", color = Color(0xFFD7C6C8), fontSize = 18.sp)
+                }
+                IconButton(onClick = onClose) { Icon(Icons.Default.Close, null, tint = White) }
+            }
+        }
+        item {
+            Column(Modifier.padding(horizontal = 18.dp).fillMaxWidth().clip(RoundedCornerShape(16.dp)).border(1.dp, Color(0xFF572126), RoundedCornerShape(16.dp))) {
+                Row(Modifier.fillMaxWidth().padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Default.Hexagon, null, tint = White, modifier = Modifier.size(26.dp))
+                    Text(robux.toString(), color = White, fontSize = 23.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(start = 14.dp).weight(1f))
+                    Text("Buy Robux", color = White, modifier = Modifier.clip(RoundedCornerShape(12.dp)).background(Color(0xFF51272C)).clickable { onSelect("Shop") }.padding(horizontal = 14.dp, vertical = 12.dp))
+                }
+                HorizontalDivider(color = Color(0xFF572126))
+                Row(Modifier.fillMaxWidth().clickable { onSelect("Shop") }.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Default.PlayCircleOutline, null, tint = White)
+                    Column(Modifier.padding(start = 14.dp)) {
+                        Text("More fun for less Robux.", color = White, fontSize = 15.sp)
+                        Text("Subscribe to Roblox Plus.     ›", color = White, fontSize = 15.sp)
+                    }
+                }
+            }
+        }
+        item { Spacer(Modifier.height(16.dp)) }
+        val entries = listOf(
+            Triple("Favorites", Icons.Default.BookmarkBorder, "Favorites"),
+            Triple("Continue Playing", Icons.Default.History, "Continue"),
+            Triple("Friends", Icons.Default.PeopleOutline, "Friends"),
+            Triple("Communities", Icons.Default.Groups, "Communities"),
+            Triple("Inventory", Icons.Default.Backpack, "Inventory"),
+            Triple("Trades", Icons.Default.SwapHoriz, "Trades"),
+            Triple("Messages", Icons.Default.MailOutline, "Messages"),
+            Triple("Roblox Plus", Icons.Default.Hexagon, "Plus"),
+            Triple("Buy Gift Cards", Icons.Default.CardGiftcard, "Gift Cards"),
+            Triple("Settings", Icons.Default.Settings, "Settings"),
+            Triple("Help & Safety", Icons.Default.Shield, "Help")
+        )
+        items(entries) { (label, icon, destination) ->
+            Row(Modifier.fillMaxWidth().clickable { onSelect(if (destination == "Favorites" || destination == "Continue" || destination == "Communities" || destination == "Trades" || destination == "Plus" || destination == "Gift Cards" || destination == "Help") destination else destination }.padding(horizontal = 24.dp, vertical = 15.dp), verticalAlignment = Alignment.CenterVertically) {
+                Icon(icon, null, tint = White, modifier = Modifier.size(25.dp))
+                Text(label, color = White, fontSize = 19.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(start = 24.dp).weight(1f))
+                if (label == "Friends") CountPill(friends.toString())
+                if (label == "Messages") CountPill("6")
+            }
+        }
+        item {
+            HorizontalDivider(color = Color(0xFF572126), modifier = Modifier.padding(horizontal = 20.dp, vertical = 12.dp))
+            Row(Modifier.fillMaxWidth().clickable { onSelect("Learn") }.padding(horizontal = 24.dp, vertical = 15.dp), verticalAlignment = Alignment.CenterVertically) {
+                Icon(Icons.Default.School, null, tint = White)
+                Text("Learn", color = White, fontSize = 19.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(start = 24.dp))
+            }
+            Text("Edit profile & stats", color = Color(0xFFE5BFC3), fontSize = 14.sp, modifier = Modifier.padding(start = 74.dp, top = 8.dp).clickable { onEdit() })
+        }
+    }
+}
+
+@Composable
+private fun CountPill(value: String) {
+    Text(value, color = White, fontSize = 15.sp, fontWeight = FontWeight.Bold, modifier = Modifier.clip(CircleShape).background(Color(0xFF315FEA)).padding(horizontal = 10.dp, vertical = 2.dp))
+}
+
+@Composable
+private fun AvatarCircle(face: String, size: Int) {
+    Box(Modifier.size(size.dp).clip(CircleShape).background(Brush.linearGradient(listOf(Color(0xFF48505D), Color(0xFF20232D)))), contentAlignment = Alignment.Center) { Text(face, fontSize = (size * .48f).sp) }
+}
+
+@Composable
+private fun ProfilePage(modifier: Modifier, username: String, handle: String, robux: Int, followers: Int, following: Int, friends: Int, visits: Int, items: Int, onEdit: () -> Unit) {
+    Column(modifier.fillMaxSize().background(Bg).verticalScroll(rememberScrollState()).padding(20.dp)) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            AvatarCircle("👑", 86)
+            Column(Modifier.weight(1f).padding(start = 16.dp)) {
+                Text(username, color = White, fontSize = 25.sp, fontWeight = FontWeight.Bold)
+                Text("@$handle", color = Grey, fontSize = 16.sp)
+            }
+            Text("Edit", color = White, modifier = Modifier.clip(RoundedCornerShape(10.dp)).background(Panel).clickable { onEdit() }.padding(12.dp))
+        }
+        Spacer(Modifier.height(22.dp))
+        Text("R$ $robux", color = White, fontSize = 24.sp, fontWeight = FontWeight.Bold)
+        Spacer(Modifier.height(22.dp))
+        Text("Statistics", color = White, fontSize = 21.sp, fontWeight = FontWeight.Bold)
+        listOf("Followers" to followers, "Following" to following, "Friends" to friends, "Visits" to visits, "Inventory" to items).forEach {
+            Row(Modifier.fillMaxWidth().padding(vertical = 13.dp), horizontalArrangement = Arrangement.SpaceBetween) {
+                Text(it.first, color = Grey, fontSize = 17.sp); Text(it.second.toString(), color = White, fontSize = 17.sp, fontWeight = FontWeight.Bold)
+            }
+            HorizontalDivider(color = Panel)
+        }
+    }
+}
+
+@Composable
+private fun ShopPage(modifier: Modifier, robux: Int, owned: List<String>, buy: (Int) -> Unit) {
+    Column(modifier.fillMaxSize().background(Bg).padding(18.dp)) {
+        Text("Avatar Shop", color = White, fontSize = 27.sp, fontWeight = FontWeight.Bold)
+        Text("Balance  R$ $robux", color = Grey, modifier = Modifier.padding(vertical = 12.dp))
+        listOf("Classic Shades" to 75, "Golden Crown" to 450, "Blue Headphones" to 120, "Street Hoodie" to 85).forEach { (name, price) ->
+            Row(Modifier.fillMaxWidth().padding(vertical = 8.dp).clip(RoundedCornerShape(14.dp)).background(Panel).padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
+                Text("🛍️", fontSize = 30.sp)
+                Text(name, color = White, modifier = Modifier.weight(1f).padding(start = 12.dp))
+                Text("R$ $price", color = White, modifier = Modifier.clickable { if (robux >= price) buy(price) }.background(Accent, RoundedCornerShape(8.dp)).padding(10.dp))
+            }
+        }
+    }
+}
+
+@Composable
+private fun SearchPage(modifier: Modifier, value: String, onValue: (String) -> Unit, back: () -> Unit) {
+    Column(modifier.fillMaxSize().background(Bg).padding(18.dp)) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            IconButton(onClick = back) { Icon(Icons.Default.ArrowBack, null, tint = White) }
+            Text("Search", color = White, fontSize = 25.sp, fontWeight = FontWeight.Bold)
+        }
+        OutlinedTextField(value, onValue, Modifier.fillMaxWidth(), placeholder = { Text("Search experiences and people") }, singleLine = true)
+        experiences.filter { value.isBlank() || it.name.contains(value, true) }.forEach { Text(it.name, color = White, fontSize = 18.sp, modifier = Modifier.padding(14.dp)) }
+    }
+}
+
+@Composable
+private fun SimplePage(modifier: Modifier, title: String, rows: List<String>) {
+    Column(modifier.fillMaxSize().background(Bg).padding(20.dp)) {
+        Text(title, color = White, fontSize = 27.sp, fontWeight = FontWeight.Bold)
+        Spacer(Modifier.height(16.dp))
+        rows.forEach { Text(it, color = White, fontSize = 17.sp, modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp)) }
+    }
+}
+
+@Composable
+private fun EditProfileDialog(user: String, handle: String, robux: Int, followers: Int, following: Int, friends: Int, visits: Int,
+    onDismiss: () -> Unit, onSave: (String, String, Int, Int, Int, Int, Int) -> Unit) {
+    var u by remember { mutableStateOf(user) }; var h by remember { mutableStateOf(handle) }
+    var r by remember { mutableStateOf(robux.toString()) }; var f by remember { mutableStateOf(followers.toString()) }
+    var fg by remember { mutableStateOf(following.toString()) }; var fr by remember { mutableStateOf(friends.toString()) }; var v by remember { mutableStateOf(visits.toString()) }
+    AlertDialog(onDismissRequest = onDismiss, containerColor = Panel,
+        title = { Text("Edit profile & stats", color = White) },
+        text = {
+            Column(Modifier.heightIn(max = 430.dp).verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                listOf("Display name" to u, "Username" to h, "Robux" to r, "Followers" to f, "Following" to fg, "Friends" to fr, "Visits" to v).forEach { (label, value) ->
+                    OutlinedTextField(value, { nv ->
+                        when (label) { "Display name" -> u = nv; "Username" -> h = nv; "Robux" -> r = nv.filter(Char::isDigit); "Followers" -> f = nv.filter(Char::isDigit); "Following" -> fg = nv.filter(Char::isDigit); "Friends" -> fr = nv.filter(Char::isDigit); else -> v = nv.filter(Char::isDigit) }
+                    }, label = { Text(label) }, singleLine = true, modifier = Modifier.fillMaxWidth())
+                }
+                Text("Данные меняются только в локальном LARP-профиле.", color = Grey, fontSize = 11.sp)
+            }
+        },
+        confirmButton = { TextButton(onClick = { onSave(u.ifBlank { "Player" }, h.ifBlank { "player" }, r.toIntOrNull() ?: 0, f.toIntOrNull() ?: 0, fg.toIntOrNull() ?: 0, fr.toIntOrNull() ?: 0, v.toIntOrNull() ?: 0) }) { Text("Save") } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } }
     )
 }
