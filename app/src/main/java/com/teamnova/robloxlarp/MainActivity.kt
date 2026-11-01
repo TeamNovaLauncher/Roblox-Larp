@@ -206,7 +206,7 @@ private fun AvatarScreen(owned: Set<Int>, equipped: Int, onEquip: (Int) -> Unit,
                 }
             }
         }
-        item { SectionTitle("Inventory", "${items.size} items") }
+        item { SectionTitle("Inventory", "${inventoryItems.size} items") }
         if (inventoryItems.isEmpty()) item { EmptyState("Your inventory is empty", "Visit the shop to get your first item.", onShop) }
         items(inventoryItems) { item ->
             Row(Modifier.fillMaxWidth().background(Color.White, RoundedCornerShape(14.dp)).padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
